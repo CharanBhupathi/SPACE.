@@ -43,9 +43,10 @@ body{
     font-weight:400;
     -webkit-text-stroke: 0.3px red;
     text-shadow: 0.3px 0.3px 0px red;
-    width:140px;
+    width:1px;
+    height:1px;
     caret-color: transparent;
-    opacity:0;
+    opacity:0.01;
     position:absolute;
 }
 
@@ -96,39 +97,30 @@ const MAX_LENGTH = 10;
 const blink = document.getElementById("blinkUnderscore");
 const CHAR_SPACING = 10; // adjust pixel spacing per character
 
-input.addEventListener("keydown", function(e){
+input.addEventListener('input', function(e){
+    let val = input.value;
+    if(val.length > MAX_LENGTH){
+        val = val.slice(0, MAX_LENGTH);
+    }
+    realValue = val;
+    input.value = realValue; // keep input in sync
+    blink.style.marginLeft = `${4 + realValue.length * CHAR_SPACING}px`;
+    counter.textContent = realValue.length;
+});
 
-    if(e.key === "Enter"){
-
+// Handle Enter key for submit
+input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
         if(realValue === CORRECT_KEY){
-            sessionStorage.setItem("gateUnlocked","true");
-            window.location.replace("index.html");
+            sessionStorage.setItem('gateUnlocked','true');
+            window.location.replace('index.html');
         } else {
-            realValue = "";
-            input.value = "";
-            counter.textContent = realValue.length;
+            realValue = '';
+            input.value = '';
+            counter.textContent = 0;
             blink.style.marginLeft = `4px`;
         }
-
-        return;
     }
-
-    if(e.key === "Backspace"){
-        realValue = realValue.slice(0,-1);
-        blink.style.marginLeft = `${4 + realValue.length * CHAR_SPACING}px`;
-        counter.textContent = realValue.length;
-        e.preventDefault();
-        return;
-    }
-
-    if(e.key.length === 1){
-        if(realValue.length >= MAX_LENGTH) return;
-        realValue += e.key;
-        blink.style.marginLeft = `${4 + realValue.length * CHAR_SPACING}px`;
-        counter.textContent = realValue.length;
-        e.preventDefault();
-    }
-
 });
 </script>
 
