@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Access</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,6 +14,10 @@
 body{
     background:rgb(255, 255, 255);
     margin:0;
+    overflow:hidden;
+    touch-action:none;
+    overscroll-behavior:none;
+
 }
 
 #securityGate{
@@ -34,25 +38,40 @@ body{
 }
 
 #securityGate input{
-    background:transparent;
-    border:none;
-    outline:none;
-    color:red;
-    font-family:"Waiting for the Sunrise", cursive;
-    font-size:0.9rem;
-    font-weight:400;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: red;
+    font-family: "Waiting for the Sunrise", cursive;
+    font-size: 0.9rem;
+    font-weight: 400;
     -webkit-text-stroke: 0.3px red;
     text-shadow: 0.3px 0.3px 0px red;
-    width:1px;
-    height:1px;
+    width: 60px;
+    height: 20px;
     caret-color: transparent;
-    opacity:0.01;
-    position:absolute;
+    opacity: 0.01;
+    position: absolute;
 }
 
 #keyArea{
     display:flex;
     align-items:center;
+}
+
+#typedDots {
+    font-family: "Waiting for the Sunrise", cursive;
+    font-size: 0.9rem;
+    font-weight: 400;
+    -webkit-text-stroke: 0.3px red;
+    text-shadow: 0.3px 0.3px 0px red;
+    color: red;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+    left: 0;
+    top: 0;
+    pointer-events: none;
 }
 
 #blinkUnderscore {
@@ -79,7 +98,7 @@ body{
 <div id="securityGate">
 
 <div id="keyArea">
-<span>KEY</span><span id="blinkUnderscore">_</span>
+<span>KEY </span><span id="typedDots"></span><span id="blinkUnderscore">_</span>
 <input id="keyInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" autofocus>
 </div>
 
@@ -89,27 +108,63 @@ body{
 
 <script>
 const CORRECT_KEY = "RKVC512025";
-
 const input = document.getElementById("keyInput");
-let realValue = "";
 const counter = document.getElementById("charCount");
 const MAX_LENGTH = 10;
 const blink = document.getElementById("blinkUnderscore");
-const CHAR_SPACING = 10; // adjust pixel spacing per character
+const CHAR_SPACING = 10;
+const typedDots = document.getElementById("typedDots");
+let realValue = "";
 
-input.addEventListener('input', function(e){
-    let val = input.value;
-    if(val.length > MAX_LENGTH){
-        val = val.slice(0, MAX_LENGTH);
-    }
-    realValue = val;
-    input.value = realValue; // keep input in sync
-    blink.style.marginLeft = `${4 + realValue.length * CHAR_SPACING}px`;
+// Disable all wheel events (prevents trackpad pinch zoom on laptops)
+document.addEventListener('wheel', function(e){
+    e.preventDefault();
+}, { passive:false });
+
+// Detect mobile device
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+function updateDisplay(){
     counter.textContent = realValue.length;
-});
 
-// Handle Enter key for submit
+    if(isMobile){
+        // show + symbols with spacing for each entered character
+        typedDots.textContent = '+ '.repeat(realValue.length);
+        if(realValue.length > 0){
+            typedDots.style.marginLeft = '8px';
+        } else {
+            typedDots.style.marginLeft = '0px';
+        }
+        input.value = '';
+        blink.style.marginLeft = '4px';
+    } else {
+        typedDots.textContent = '';
+        input.value = realValue;
+        // move underscore with typed characters on desktop
+        blink.style.marginLeft = `${4 + realValue.length * CHAR_SPACING}px`;
+    }
+}
+
+// Keydown handles typing, backspace, and enter
 input.addEventListener('keydown', function(e){
+    if(e.key === 'Backspace'){
+        if(realValue.length > 0){
+            realValue = realValue.slice(0, -1);
+            updateDisplay();
+        }
+        e.preventDefault();
+        return;
+    }
+
+    if(e.key.length === 1){ // normal character
+        if(realValue.length < MAX_LENGTH){
+            realValue += e.key;
+            updateDisplay();
+        }
+        e.preventDefault();
+        return;
+    }
+
     if(e.key === 'Enter'){
         if(realValue === CORRECT_KEY){
             sessionStorage.setItem('gateUnlocked','true');
@@ -119,8 +174,28 @@ input.addEventListener('keydown', function(e){
             input.value = '';
             counter.textContent = 0;
             blink.style.marginLeft = `4px`;
+            typedDots.textContent = '';
         }
     }
+});
+
+// Mobile: handle virtual keyboard typing
+input.addEventListener('input', function(e){
+    if(!isMobile) return;
+
+    let val = input.value;
+
+    // append each typed character
+    for(let ch of val){
+        if(realValue.length < MAX_LENGTH){
+            realValue += ch;
+        }
+    }
+
+    // clear the real input so mobile keyboards don't reuse the value
+    input.value = '';
+
+    updateDisplay();
 });
 </script>
 
