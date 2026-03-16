@@ -12,6 +12,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Mukta&display=swap" rel="stylesheet">
 </head>
 <body>
+
+    <script>
+    if(sessionStorage.getItem("gateUnlocked") !== "true"){
+    window.location.href = "gate.html";
+    }
+    </script>
+
     <!-- Music Control Button -->
     <button id="musicControl" class="music-control">Pause.</button>
 
